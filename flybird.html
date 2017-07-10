@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>笨鸟先飞</title>
+</head>
+<body>
+<canvas id="canvas" width="400px" height="600px"></canvas>
+<button id="btn">暂停游戏</button>
+<script>
+
+//-------------------------插入小鸟-----------------------------------------------------------------------------------
+
+    var birdArr = ["images/0.gif", "images/1.gif", "images/2.gif"];
+    function Bird(x, y, width, height, img_srcs) {
+        this.bx = x;
+        this.by = y;
+        this.bw = width;
+        this.bh = height;
+        this.imgs = img_srcs;
+        this.draw = flybird;
+    }
+
+    var i = 0;
+    function flybird() {
+        i++;
+        i = i % 3;
+        var birds = new Image();
+        birds.src = this.imgs[i];
+        console.log(birds.src);
+        canvas.drawImage(birds, this.bx, this.by, this.bw, this.bh);//bird 小鸟的路径 150 250  小鸟的起始位置
+    }
+
+
+    var bird = new Bird(150, 250, 40, 40, birdArr);
+
+
+    //---------------------------------------------插入管子（上）-------------------------------------------
+
+
+    function ShangPipe(x, y, width, height, img_src) {
+        this.px = x;
+        this.py = y;
+        this.pwidth = width;
+        this.pheight = height;
+        var imag = new Image();
+        imag.src = img_src;
+        this.img = imag;
+
+        this.draw = drawShangPipe;
+    }
+    function drawShangPipe() {
+
+        canvas.drawImage(this.img, 150, 500, 150, 800, this.px, this.py, this.pwidth, this.pheight);
+    }
+    var shang_pipe = new ShangPipe(0, 0, 100, 200, "images/pipe.png");//上管道
+
+    //---------------------------------插入管子（下）------------------------------
+
+    //var downPipe = 400;
+    function XiaPipe(x, y, width, height, img_src) {
+        this.px = x;
+        this.py = y;
+        this.pwidth = width;
+        this.pheight = height;
+
+        var imag = new Image();
+        imag.src = img_src;
+        this.img = imag;
+
+        this.draw = drawXiaPipe;
+    }
+
+    function drawXiaPipe() {
+        canvas.drawImage(this.img, 0, 500, 150, 500, this.px, this.py, this.pwidth, this.pheight);
+
+    }
+    var xia_pipe = new XiaPipe(0, 400, 100, 200, "images/pipe.png");//下管道
+
+    //------------------------------------------地面---------------------------------------
+
+    function Background(x, y, width, height, img_src) {
+        this.bgx = x;
+        this.bgy = y;
+        this.bgwidth = width;
+        this.bgheight = height;
+
+        var image = new Image(); //图片对象
+        image.src = img_src;
+        this.img = image;
+
+        this.draw = function () {
+
+            // drawImage() 绘制图片
+            // 第一个参数：绘制的image对象
+            // 第2~5个参数：绘制的位置和大小
+            canvas.drawImage(this.img, this.bgx, this.bgy, this.bgwidth, this.bgheight);
+        }
+    }
+
+    var ground = new Background(0, 550, 400, 200, "images/ground.png"); //地面
+
+//----------------------------------获取画布 插入背景图片-------------------------------------------------
+    var canvas = document.getElementById("canvas").getContext("2d");
+
+    var image1 = new Image();
+    image1.src = "images/bg.png";
+    function grounddraw() {
+        canvas.drawImage(image1, 0, 0, 400, 600);//400  600 压缩图片大小
+    }
+
+//---------------------------------设置上下管道的长度变化----------------------------------------------------
+
+    /*
+     var pipe_height = 200；
+     上管道和下管道的 x  是一样的
+     up_pipe.px = 400;
+     down_pipe.px = 400;
+     上管道的height + 中间差距200 = 下管道的 y 位置 down_pipe.py = up_pipe.pheight + pipe_height;
+     所以下管道的高度为 down_pipe.pheight = 600 - down_pipe.py;
+
+     */
+
+    var v = 20;//管道移动速度
+    var pipe_height = 200;//管道中间的间距
+    function Guandao() {
+        if (shang_pipe.px + shang_pipe.pwidth > 0) {
+
+            shang_pipe.px -= v;
+            xia_pipe.px -= v;
+        } else {
+
+            shang_pipe.px = 400;
+            xia_pipe.px = 400;
+
+            shang_pipe.pheight = 100 + 200 * Math.random();
+            //100~300随机数
+            xia_pipe.py = shang_pipe.pheight + pipe_height;
+            xia_pipe.pheight = 600 - xia_pipe.py;
+            isScore = true;
+        }
+    }
+//------------------------------------设置小鸟下降---------------------------------------------
+    var v1 = 10;
+    var v2 = 0;
+    var a = 2;
+    var s = 0;
+    function birddown() {
+
+        v2 = v1 + a;
+        bird.by += (v1 + v2) / 2;
+    }
+
+//------------------------------------设置点击空格小鸟上升---------------------------------------------
+    window.onkeydown = function onkey(event) {
+        var e = event || window.event;
+        if (e.keyCode == 32) {
+            bird.by -= 80;
+        }
+    };
+
+//------------------------------------------小鸟碰撞检测-------------------------------------
+    var tid;
+    function gameover() {//鸟碰到上管道//鸟碰到地面//鸟碰到天空
+
+        if (bird.by + bird.bh > ground.bgy
+                || bird.by < 0
+                || ((bird.bx + bird.bw > shang_pipe.px) && (bird.bx < shang_pipe.px + shang_pipe.pwidth) && (bird.by < shang_pipe.py + shang_pipe.pheight) && (bird.by + bird.bh > shang_pipe.py))
+                || ((bird.bx + bird.bw > xia_pipe.px) && (bird.by + bird.bh > xia_pipe.py) && (bird.bx < xia_pipe.px + xia_pipe.pwidth) && (bird.by < xia_pipe.py + xia_pipe.pheight))) {
+            clearInterval(tid);
+            canvas.fillStyle = "rgb(135,250,205)";
+            canvas.font = "30px Accent";
+            canvas.fillText("score is：" +score, 160, 150);
+            return;
+        }
+        Guandao();//管道移动
+        birddown();//移动小鸟
+        Score();
+    }
+
+//-----------------------------设置得分----------------------------------------------------------
+    var score = 0;
+    var isScore = false;
+    function Score() {
+        if (isScore && bird.bx > shang_pipe.px + shang_pipe.pwidth) {
+            score++;
+            isScore = false;
+
+            if (score > 0 && score % 12 == 0) {
+
+                v=v+13; //成绩每过10分就加速一次
+            }
+        }
+        canvas.fillStyle = "rgb(135,250,205)";
+        canvas.font = "30px  Accent";
+        if (score > 0) {
+            canvas.fillText(score, 160, 150);
+
+        }
+
+    }
+
+    var but = document.getElementById("btn");
+    but.onclick = function(){
+        console.log("定时器" +tid +"已暂停");
+        clearInterval(tid);
+    }
+
+//------------------------------整体函数----------------------------------------------------------------
+
+    function draw() {
+        canvas.clearRect(0, 0, 400, 600);
+        grounddraw();//画地面
+        shang_pipe.draw();//画上管道
+        xia_pipe.draw();//画下管道
+        bird.draw();//画小鸟
+        ground.draw();//画地面
+        gameover();// 碰撞检测 （内置 管道移动和小鸟移动）
+
+
+
+    }
+    tid = setInterval(draw, 100);
+
+
+</script>
+</body>
+</html>
